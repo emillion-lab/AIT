@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Advanced Intuition Training (HTML)</title>
+  <!-- Tailwind по CDN за да запазим визията близка до оригинала -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Няколко дребни помощни стила */
+    .border-3 { border-width: 3px; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-200">
+  <!-- Език -->
+  <div class="fixed right-4 top-4 z-50 flex items-center gap-2">
+    <label for="lang" class="text-xs text-gray-400">🌐</label>
+    <select id="lang" class="bg-gray-800/70 border border-gray-700 rounded px-2 py-1 text-sm">
+      <option value="bg" selected>Български</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
+  <!-- Индикатор за дишане -->
+  <div id="breathing" class="hidden fixed left-4 top-16 items-center gap-3 bg-gray-800/60 px-4 py-3 rounded-lg border border-gray-700">
+    <svg id="breathIcon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h4l2 6 2-6h4"></path><path d="M5 16h14"></path></svg>
+    <div>
+      <p id="breathText" class="text-gray-400 text-xs"></p>
+      <div class="w-16 h-1 bg-gray-700 rounded-full mt-1">
+        <div id="breathBar" class="h-full bg-gray-400" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Прогрес бар -->
+  <div id="progressBar" class="hidden fixed top-0 left-0 right-0 h-2 bg-gray-900 z-40 flex">
+    <div id="progressRed" class="bg-red-600 transition-all duration-700" style="width:100%"></div>
+    <div id="progressGreen" class="bg-green-600 transition-all duration-700" style="width:0%"></div>
+  </div>
+
+  <!-- Контейнер -->
+  <main id="app" class="flex items-center justify-center p-4"></main>
+
+  <script>
+    /***********************
+     * Многоезичен речник  *
+     ***********************/
+    const i18n = {
+      bg: {
+        appTitle: "Advanced Intuition Training",
+        basedOn: "Базирано на протоколи за Remote Viewing от проекта CIA Stargate",
+        selectTrainingMode: "Избери режим на тренировка",
+        normalMode: "Нормален режим",
+        normalModeDesc: "Стандартна тренировка с прогресивни нива",
+        hyperMode: "Хиперрежим",
+        hyperModeDesc: "Напреднала тренировка — без избор, въвеждаш отговор",
+        chooseFocus: "Избери фокус",
+        selectProfile: "Избери профил на възприятие",
+        levelTitle: "Избери ниво",
+        prepareMind: "Подготви ума",
+        prepareDesc: "Затвори очи. Следвай дъха си. Изчисти мислите. Позволи на интуицията да се пробуди.",
+        breatheIn: "Вдишай",
+        breatheOut: "Издишай",
+        hold: "Задръж",
+        whichOne: "Кое усещаш?",
+        trustFirst: "Довери се на първия импулс...",
+        help: "помощ",
+        clear: "изчисти",
+        typeSense: "Въведи какво усещаш...",
+        submitPerception: "Изпрати възприятие",
+        accuracy: "Точност",
+        hypCaption: "Какво възприемаш?",
+        hypSub: "Довери се само на способностите си за дистанционно виждане...",
+        hypHint: "Въведи отговора по-долу",
+        correct: "Вярно!",
+        notQuite: "Почти",
+        correctPerfect: "Перфектно! Интуицията ти е силна.",
+        correctHint: "Вярно! (Използвана подсказка — половин точка)",
+        wrongMsg: (t) => `Търсеният таргет беше: ${t}. Продължавай да тренираш!`,
+        youChose: (c) => `Твоят избор: ${c}`,
+        copyResults: "📋 Копирай резултатите",
+        continueTraining: "Продължи тренировката",
+        startOver: "Започни отначало",
+        nextTarget: "Следваща задача",
+        back: "← Назад",
+        modeLabel: (mode, levelName, levelNum) =>
+          mode === 'hypermode' ? 'HYPERMODE' : `Ниво ${levelNum}: ${levelName}`,
+        resultsCopied: "Резултатите са копирани!",
+        levelName: {
+          1: "Начинаещ", 2: "Новак", 3: "Ученик", 4: "Студент", 5: "Практик",
+          6: "Умел", 7: "Напреднал", 8: "Експерт", 9: "Майстор", 10: "Грандмайстор"
+        },
+        choicesWord: "избора"
+      },
+      en: {
+        appTitle: "Advanced Intuition Training",
+        basedOn: "Based on Remote Viewing protocols from the CIA Stargate Project",
+        selectTrainingMode: "Select Your Training Mode",
+        normalMode: "Normal Mode",
+        normalModeDesc: "Standard intuition training with progressive levels",
+        hyperMode: "Hypermode",
+        hyperModeDesc: "Advanced training — no choices, type the answer",
+        chooseFocus: "Choose Your Focus",
+        selectProfile: "Select a perception profile",
+        levelTitle: "Select Your Level",
+        prepareMind: "Prepare Your Mind",
+        prepareDesc: "Close your eyes. Follow your breath. Clear your thoughts. Let your intuition awaken.",
+        breatheIn: "Breathe In",
+        breatheOut: "Breathe Out",
+        hold: "Hold",
+        whichOne: "Which one do you sense?",
+        trustFirst: "Trust your first instinct...",
+        help: "help",
+        clear: "clear",
+        typeSense: "Type what you sense...",
+        submitPerception: "Submit Perception",
+        accuracy: "Accuracy",
+        hypCaption: "What do you perceive?",
+        hypSub: "Trust only your remote viewing abilities...",
+        hypHint: "Type your answer below",
+        correct: "Correct!",
+        notQuite: "Not quite",
+        correctPerfect: "Perfect! Your intuition is strong.",
+        correctHint: "Correct! (Hint used — half points)",
+        wrongMsg: (t) => `The target was: ${t}. Keep practicing!`,
+        youChose: (c) => `You chose: ${c}`,
+        copyResults: "📋 Copy Results",
+        continueTraining: "Continue Training",
+        startOver: "Start Over",
+        nextTarget: "Next Target",
+        back: "← Back",
+        modeLabel: (mode, levelName, levelNum) =>
+          mode === 'hypermode' ? 'HYPERMODE' : `Level ${levelNum}: ${levelName}`,
+        resultsCopied: "Results copied!",
+        levelName: {
+          1: "Beginner", 2: "Novice", 3: "Learner", 4: "Student", 5: "Practitioner",
+          6: "Skilled", 7: "Advanced", 8: "Expert", 9: "Master", 10: "Grandmaster"
+        },
+        choicesWord: "choices"
+      }
+    };
+
+    /*********************************
+     * Данни, адаптирани от TSX кода *
+     *********************************/
+    const PROFILES = [
+      { id: 'shapes',   name: {bg:'Форми', en:'Shapes & Forms'},     desc: {bg:'Фокус върху геометрични фигури', en:'Focus on geometric patterns'} },
+      { id: 'colors',   name: {bg:'Цветове', en:'Colors & Tones'},    desc: {bg:'Усети цветовите вибрации', en:'Sense color vibrations'} },
