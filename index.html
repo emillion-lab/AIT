@@ -1,12 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Advanced Intuition Training</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#111827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Advanced Intuition Training</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:linear-gradient(135deg,#111827 0%,#1f2937 50%,#111827 100%);color:#e5e7eb;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow-x:hidden}
+button{cursor:pointer;font-family:inherit;border:none;transition:all .3s}
+/* PROGRESS BAR */
+#progressBar{position:fixed;top:0;left:0;right:0;height:3px;display:none;z-index:50;background:#111827}
+#progressRed{background:#dc2626;height:100%;transition:width .7s}
+#progressGreen{background:#16a34a;height:100%;transition:width .7s}
+/* BREATHING */
+#breathingBox{position:fixed;left:12px;top:14px;display:none;align-items:center;gap:10px;background:rgba(31,41,55,.8);padding:10px 14px;border-radius:10px;border:1px solid #374151;backdrop-filter:blur(6px);z-index:40}
+.breath-svg{width:22px;height:22px;color:#9ca3af;transition:transform .1s}
+.breath-label{font-size:11px;color:#9ca3af}
+.breath-bar-wrap{width:60px;height:3px;background:#374151;border-radius:2px;margin-top:3px}
+.breath-bar{height:100%;background:#6b7280;border-radius:2px;transition:width .1s}
+/* SCREENS */
+.screen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:16px}
+.screen.on{display:flex}
+.inner{width:100%;max-width:640px}
+/* TYPOGRAPHY */
+h1{font-size:clamp(28px,6vw,48px);font-weight:300;color:#e5e7eb;margin-bottom:10px;line-height:1.2}
+h2{font-size:clamp(22px,4vw,32px);font-weight:300;color:#e5e7eb;margin-bottom:8px}
+.sub{color:#6b7280;font-size:14px;margin-bottom:6px}
+.muted{color:#9ca3af}
+/* CARDS / BUTTONS */
+.card-btn{width:100%;background:rgba(55,65,81,.5);border:1px solid #4b5563;border-radius:10px;padding:20px;margin-bottom:10px;text-align:left;color:#e5e7eb;transition:all .3s}
+.card-btn:hover{background:rgba(75,85,99,.5);border-color:#6b7280;transform:translateY(-1px)}
+.card-btn .t{font-size:17px;font-weight:400;margin-bottom:4px}
+.card-btn .d{font-size:13px;color:#9ca3af}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:12px;margin-top:6px}
+/* CHOICES */
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.choice-btn{background:rgba(55,65,81,.6);border:1px solid #4b5563;border-radius:10px;padding:16px 12px;font-size:15px;color:#e5e7eb;text-align:center;transition:all .25s}
+.choice-btn:hover{background:rgba(99,102,241,.2);border-color:#6366f1}
+.choice-btn.correct{background:rgba(22,163,74,.25);border-color:#16a34a;color:#4ade80}
+.choice-btn.wrong{background:rgba(220,38,38,.2);border-color:#dc2626;color:#f87171}
+/* HYPERMODE */
+.hyper-box{background:rgba(88,28,135,.15);border:1px solid rgba(109,40,217,.4);border-radius:12px;padding:32px;text-align:center;margin:20px 0;position:relative;overflow:hidden}
+.hyper-box::before{content:'';position:absolute;inset:-50%;background:radial-gradient(circle,rgba(109,40,217,.1) 0%,transparent 70%);animation:pulse-bg 3s ease-in-out infinite}
+@keyframes pulse-bg{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.2);opacity:1}}
+.hyper-icon{width:64px;height:64px;margin:0 auto 16px;color:#a855f7;animation:pulse 2s ease-in-out infinite}
+.hyper-inp{width:100%;background:rgba(88,28,135,.2);border:1px solid rgba(109,40,217,.5);border-radius:8px;padding:14px;font-size:15px;color:#e9d5ff;outline:none;margin-top:16px;font-family:inherit}
+.hyper-inp:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(109,40,217,.2)}
+.hyper-inp::placeholder{color:#7c3aed}
+/* RELAXATION */
+.relax-circle{width:120px;height:120px;border-radius:50%;background:rgba(59,130,246,.1);border:2px solid rgba(59,130,246,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;transition:transform .5s ease}
+/* FEEDBACK */
+.fb-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:40px;border:3px solid}
+.fb-circle.ok{background:rgba(20,83,45,.3);border-color:#16a34a}
+.fb-circle.bad{background:rgba(127,29,29,.3);border-color:#dc2626}
+/* LEVEL GRID */
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.level-btn{background:rgba(55,65,81,.5);border:1px solid #4b5563;border-radius:8px;padding:14px 4px;text-align:center;color:#e5e7eb;font-size:13px;transition:all .25s}
+.level-btn:hover{background:rgba(99,102,241,.2);border-color:#818cf8}
+.level-num{font-size:22px;font-weight:300;display:block;color:#d1d5db}
+.level-name{font-size:9px;color:#9ca3af;margin-top:2px}
+/* SCORE */
+.score-ring{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 20px}
+.score-num{font-size:36px;font-weight:300}
+/* MISC */
+.center{text-align:center}
+.mt{margin-top:20px}
+.mb{margin-bottom:16px}
+.btn-back{background:transparent;border:1px solid #374151;color:#9ca3af;padding:10px 20px;border-radius:8px;font-size:14px;margin-top:12px}
+.btn-back:hover{border-color:#6b7280;color:#e5e7eb}
+.btn-primary{background:#4f46e5;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:500;border:none}
+.btn-primary:hover{background:#4338ca}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+/* PWA banner */
+#pwaBanner{display:none;position:fixed;bottom:0;left:0;right:0;background:#1f2937;border-top:2px solid #4f46e5;padding:10px 14px;align-items:center;justify-content:space-between;gap:10px;z-index:999}
+#pwaBanner .pt{font-size:13px;font-weight:700}
+#pwaBanner .ps{font-size:11px;color:#6b7280;margin-top:1px}
+.btn-pwa-y{background:#4f46e5;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:13px;font-weight:700}
+.btn-pwa-n{background:transparent;border:1px solid #374151;color:#6b7280;border-radius:7px;padding:7px 12px;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progressBar"><div id="progressRed" style="width:100%"></div><div id="progressGreen" style="width:0%"></div></div>
+
+<!-- Breathing indicator -->
+<div id="breathingBox">
+  <svg class="breath-svg" id="breathSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 8h4l2 6 2-6h4"/><path d="M5 16h14"/>
+  </svg>
+  <div>
+    <div class="breath-label" id="breathLabel">Breathe In</div>
+    <div class="breath-bar-wrap"><div class="breath-bar" id="breathBarEl" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ── MODE SELECT ── -->
+<div class="screen on" id="s-mode">
+  <div class="inner center">
+    <svg class="pulse" style="width:72px;height:72px;margin:0 auto 20px;color:#6b7280" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+    <h1>Advanced Intuition Training</h1>
+    <p class="sub">Based on CIA Stargate Project Remote Viewing protocols</p>
+    <p class="muted mb" style="margin-bottom:32px">Select Your Training Mode</p>
+    <div>
+      <button class="card-btn" onclick="selectMode('normal')">
+        <div class="t">🎯 Normal Mode</div>
+        <div class="d">Choose the correct target from multiple options. Best for beginners.</div>
+        <span class="tag" style="background:rgba(99,102,241,.2);color:#818cf8">Multiple Choice</span>
+      </button>
+      <button class="card-btn" onclick="selectMode('hypermode')">
+        <div class="t">⚡ Hypermode</div>
+        <div class="d">Type your perception freely. Advanced free-form remote viewing.</div>
+        <span class="tag" style="background:rgba(168,85,247,.2);color:#c084fc">Free Form</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROFILE SELECT ── -->
+<div class="screen" id="s-profile">
+  <div class="inner">
+    <div class="center mb" style="margin-bottom:32px">
+      <svg style="width:60px;height:60px;margin:0 auto 16px;color:#6b7280" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2v20M2 12h20"/>
+      </svg>
+      <h1>Choose Your Focus</h1>
+      <p class="muted">Select a perception profile</p>
+    </div>
+    <div id="profileList"></div>
+    <div class="center"><button class="btn-back" onclick="goBack('mode')">← Back</button></div>
+  </div>
+</div>
+
+<!-- ── LEVEL SELECT ── -->
+<div class="screen" id="s-level">
+  <div class="inner">
+    <div class="center mb" style="margin-bottom:28px">
+      <h2>Select Your Level</h2>
+      <p class="muted" id="lvlProfileName"></p>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+    <div class="center"><button class="btn-back" onclick="goBack('profile')">← Back</button></div>
+  </div>
+</div>
+
+<!-- ── RELAXATION ── -->
+<div class="screen" id="s-relax">
+  <div class="inner center">
+    <div class="relax-circle" id="relaxCircle">🫁</div>
+    <h2>Relax & Focus</h2>
+    <p class="muted" style="margin-bottom:20px">Follow the breathing rhythm to prepare your mind</p>
+    <p style="font-size:13px;color:#6b7280">Starting in <span id="relaxCount">5</span>s…</p>
+  </div>
+</div>
+
+<!-- ── PRACTICE ── -->
+<div class="screen" id="s-practice">
+  <div class="inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-size:13px;color:#6b7280" id="modeLabel"></span>
+      <span style="font-size:13px;color:#6b7280" id="attemptLabel"></span>
+    </div>
+    <!-- Normal mode -->
+    <div id="normalMode">
+      <div style="background:rgba(55,65,81,.4);border:1px solid #374151;border-radius:12px;padding:28px;text-align:center;margin-bottom:8px">
+        <p style="font-size:13px;color:#6b7280;margin-bottom:8px">Focus on the hidden target</p>
+        <p style="font-size:36px;margin-bottom:6px">🎯</p>
+        <p style="font-size:13px;color:#9ca3af">What do you perceive?</p>
+      </div>
+      <div class="choice-grid" id="choiceGrid"></div>
+    </div>
+    <!-- Hypermode -->
+    <div id="hyperMode" style="display:none">
+      <div class="hyper-box">
+        <svg class="hyper-icon pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <p style="color:#c084fc;font-size:18px;margin-bottom:6px">Open your perception</p>
+        <p style="color:#7c3aed;font-size:13px">Type what you sense about the hidden target</p>
+        <input class="hyper-inp" id="hyperInp" placeholder="Describe your perception…" type="text">
+        <button class="btn-primary mt" onclick="submitHyper()" style="margin-top:16px">Submit Perception →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FEEDBACK ── -->
+<div class="screen" id="s-feedback">
+  <div class="inner center">
+    <div class="fb-circle" id="fbCircle">✓</div>
+    <h2 id="fbTitle">Correct!</h2>
+    <p class="muted" id="fbSub"></p>
+    <div style="background:rgba(55,65,81,.4);border:1px solid #374151;border-radius:10px;padding:16px;margin:20px 0;text-align:left">
+      <p style="font-size:12px;color:#6b7280;margin-bottom:4px">The target was:</p>
+      <p style="font-size:20px;font-weight:400" id="fbTarget"></p>
+      <p style="font-size:13px;color:#9ca3af;margin-top:6px" id="fbYour"></p>
+    </div>
+    <button class="btn-primary" onclick="nextRound()">Continue →</button>
+  </div>
+</div>
+
+<!-- ── RESULTS ── -->
+<div class="screen" id="s-results">
+  <div class="inner center">
+    <div class="score-ring" id="scoreRing">
+      <div class="score-num" id="scoreNum">0</div>
+      <div style="font-size:12px;color:#9ca3af" id="scoreDen">/0</div>
+    </div>
+    <h2 id="resultTitle">Session Complete</h2>
+    <p class="muted mb" id="resultSub"></p>
+    <div style="background:rgba(55,65,81,.4);border:1px solid #374151;border-radius:10px;padding:16px;margin:16px 0;text-align:left">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #374151">
+        <span class="muted">Profile</span><span id="rProfile"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #374151">
+        <span class="muted">Level</span><span id="rLevel"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #374151">
+        <span class="muted">Mode</span><span id="rMode"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0">
+        <span class="muted">Accuracy</span><span id="rAcc" style="color:#4ade80;font-weight:600"></span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="restart()" style="margin-bottom:10px;width:100%">🔄 Train Again</button>
+    <button class="btn-back" onclick="goBack('mode')" style="width:100%">← Change Mode</button>
+  </div>
+</div>
+
+<!-- PWA Banner -->
+<div id="pwaBanner">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:24px">🧠</span>
+    <div><div class="pt">Install AIT App</div><div class="ps">Works offline · Quick access</div></div>
+  </div>
+  <div style="display:flex;gap:7px">
+    <button class="btn-pwa-n" onclick="dismissPWA()">Not now</button>
+    <button class="btn-pwa-y" id="pwaInstallBtn">Install ↓</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const PROFILES=[
+  {id:'shapes',  name:'Shapes & Forms',      desc:'Focus on geometric patterns',      icon:'⬡', color:'#6366f1'},
+  {id:'colors',  name:'Colors & Tones',       desc:'Sense color vibrations',           icon:'🎨', color:'#ec4899'},
+  {id:'numbers', name:'Numbers & Symbols',    desc:'Perceive numerical patterns',      icon:'∞',  color:'#14b8a6'},
+  {id:'emotions',name:'Feelings & Emotions',  desc:'Connect with emotional energy',    icon:'💫', color:'#f59e0b'},
+  {id:'locations',name:'Places & Spaces',     desc:'Visualize environments',           icon:'🌐', color:'#22c55e'},
+];
+const LEVELS={
+  1:{name:'Beginner',   targets:5, choices:2},
+  2:{name:'Novice',     targets:5, choices:3},
+  3:{name:'Learner',    targets:6, choices:4},
+  4:{name:'Student',    targets:6, choices:5},
+  5:{name:'Practitioner',targets:7,choices:6},
+  6:{name:'Adept',      targets:7, choices:7},
+  7:{name:'Advanced',   targets:8, choices:8},
+  8:{name:'Expert',     targets:8, choices:9},
+  9:{name:'Master',     targets:9, choices:10},
+  10:{name:'Remote Viewer',targets:10,choices:12},
+};
+const TARGETS={
+  shapes: ['Circle','Triangle','Square','Pentagon','Hexagon','Star','Spiral','Cross','Diamond','Arrow','Wave','Infinity','Crescent','Oval','Cylinder'],
+  colors: ['Red','Blue','Green','Yellow','Purple','Orange','Cyan','Magenta','Gold','Silver','Indigo','Violet','Crimson','Emerald','Azure'],
+  numbers: ['7','13','42','π','∞','0','1','√2','Φ','e','11','3','21','666','888'],
+  emotions: ['Joy','Fear','Love','Anger','Peace','Sadness','Hope','Surprise','Disgust','Anticipation','Trust','Awe','Grief','Ecstasy','Serenity'],
+  locations: ['Mountain','Ocean','Desert','Forest','City','Cave','Island','Volcano','Tundra','Jungle','Canyon','Meadow','Glacier','Swamp','Space'],
+};
+
+// ── STATE ──
+let mode='normal', profile=null, level=1, score=0, attempts=0;
+let target='', choices=[], usedTargets=[], stage='mode';
+
+// Breathing
+let breathPhase=0, breathProgress=0, breathIv=null;
+const PHASES=['inhale','hold','exhale','hold'];
+const PHASE_LABELS=['Breathe In','Hold','Breathe Out','Hold'];
+
+// ── SCREENS ──
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('s-'+id).classList.add('on');
+  stage=id;
+}
+
+function goBack(to){
+  if(to==='mode'){stopBreath();show('mode');}
+  else if(to==='profile') show('profile');
+  else if(to==='level') show('level');
+}
+
+// ── MODE SELECT ──
+function selectMode(m){
+  mode=m;
+  buildProfiles();
+  show('profile');
+}
+
+// ── PROFILE ──
+function buildProfiles(){
+  document.getElementById('profileList').innerHTML=PROFILES.map(p=>
+    '<button class="card-btn" onclick="selectProfile(\''+p.id+'\')" style="border-left:3px solid '+p.color+'">'+
+    '<div class="t">'+p.icon+' '+p.name+'</div>'+
+    '<div class="d">'+p.desc+'</div>'+
+    '</button>'
+  ).join('');
+}
+function selectProfile(id){
+  profile=PROFILES.find(p=>p.id===id);
+  document.getElementById('lvlProfileName').textContent=profile.name;
+  buildLevels();
+  show('level');
+}
+
+// ── LEVEL ──
+function buildLevels(){
+  document.getElementById('levelGrid').innerHTML=Object.entries(LEVELS).map(([l,cfg])=>
+    '<button class="level-btn" onclick="selectLevel('+l+')">'+
+    '<span class="level-num">'+l+'</span>'+
+    '<span class="level-name">'+cfg.name+'</span>'+
+    '</button>'
+  ).join('');
+}
+function selectLevel(l){
+  level=l;score=0;attempts=0;usedTargets=[];
+  updateProgress();
+  startBreath();
+  show('relax');
+  let n=5;
+  document.getElementById('relaxCount').textContent=n;
+  const iv=setInterval(()=>{
+    n--;
+    document.getElementById('relaxCount').textContent=n;
+    const t=n/5;
+    document.getElementById('relaxCircle').style.transform='scale('+(1+0.3*(1-t))+')';
+    if(n<=0){clearInterval(iv);startRound();}
+  },1000);
+}
+
+// ── BREATHING ──
+function startBreath(){
+  document.getElementById('breathingBox').style.display='flex';
+  breathPhase=0;breathProgress=0;
+  breathIv=setInterval(tickBreath,50);
+}
+function stopBreath(){
+  clearInterval(breathIv);
+  document.getElementById('breathingBox').style.display='none';
+}
+function tickBreath(){
+  breathProgress+=50/4000;
+  if(breathProgress>=1){breathProgress=0;breathPhase=(breathPhase+1)%4;}
+  document.getElementById('breathLabel').textContent=PHASE_LABELS[breathPhase];
+  document.getElementById('breathBarEl').style.width=(breathProgress*100)+'%';
+  const sc=PHASES[breathPhase]==='inhale'?1+breathProgress*0.3:PHASES[breathPhase]==='exhale'?1.3-breathProgress*0.3:breathPhase===1?1.3:1.0;
+  document.getElementById('breathSvg').style.transform='scale('+sc.toFixed(2)+')';
+}
+
+// ── ROUND ──
+function shuffle(arr){return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);}
+
+function startRound(){
+  const cfg=LEVELS[level];
+  const pool=TARGETS[profile.id].filter(t=>!usedTargets.includes(t));
+  if(!pool.length||attempts>=cfg.targets){endSession();return;}
+  target=pool[Math.floor(Math.random()*pool.length)];
+  usedTargets.push(target);
+  attempts++;
+  document.getElementById('modeLabel').textContent=mode==='hypermode'?'⚡ Hypermode':'🎯 Normal Mode';
+  document.getElementById('attemptLabel').textContent=attempts+' / '+cfg.targets;
+  updateProgress();
+  if(mode==='normal'){
+    const others=TARGETS[profile.id].filter(t=>t!==target);
+    const wrong=shuffle(others).slice(0,cfg.choices-1);
+    choices=shuffle([target,...wrong]);
+    document.getElementById('normalMode').style.display='block';
+    document.getElementById('hyperMode').style.display='none';
+    document.getElementById('choiceGrid').innerHTML=choices.map(c=>
+      '<button class="choice-btn" onclick="selectChoice(\''+c+'\',this)">'+c+'</button>'
+    ).join('');
+    // Adjust grid columns
+    document.getElementById('choiceGrid').style.gridTemplateColumns=choices.length>6?'1fr 1fr 1fr':'1fr 1fr';
+  } else {
+    document.getElementById('normalMode').style.display='none';
+    document.getElementById('hyperMode').style.display='block';
+    document.getElementById('hyperInp').value='';
+    setTimeout(()=>document.getElementById('hyperInp').focus(),100);
+  }
+  show('practice');
+}
+
+function selectChoice(c, btn){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  const correct=c===target;
+  if(correct) score++;
+  btn.classList.add(correct?'correct':'wrong');
+  if(!correct){
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      if(b.textContent===target) b.classList.add('correct');
+    });
+  }
+  updateProgress();
+  setTimeout(()=>showFeedback(correct,c),600);
+}
+
+function submitHyper(){
+  const inp=document.getElementById('hyperInp').value.trim();
+  if(!inp) return;
+  const correct=inp.toLowerCase().includes(target.toLowerCase())||target.toLowerCase().includes(inp.toLowerCase());
+  if(correct) score++;
+  updateProgress();
+  showFeedback(correct,inp);
+}
+
+function showFeedback(correct,answer){
+  const fb=document.getElementById('fbCircle');
+  fb.className='fb-circle '+(correct?'ok':'bad');
+  fb.textContent=correct?'✓':'✗';
+  document.getElementById('fbTitle').textContent=correct?'Correct!':'Incorrect';
+  document.getElementById('fbTitle').style.color=correct?'#4ade80':'#f87171';
+  document.getElementById('fbSub').textContent=correct?'Your perception aligned with the target.':'Keep training your intuition.';
+  document.getElementById('fbTarget').textContent=target;
+  document.getElementById('fbYour').textContent=mode==='hypermode'?'You wrote: "'+answer+'"':'You chose: '+answer;
+  show('feedback');
+}
+
+function nextRound(){
+  const cfg=LEVELS[level];
+  if(attempts>=cfg.targets) endSession();
+  else startRound();
+}
+
+function updateProgress(){
+  const cfg=LEVELS[level];
+  const pct=attempts?Math.round(score/attempts*100):0;
+  const bar=document.getElementById('progressBar');
+  bar.style.display='flex';
+  document.getElementById('progressRed').style.width=(100-pct)+'%';
+  document.getElementById('progressGreen').style.width=pct+'%';
+}
+
+function endSession(){
+  stopBreath();
+  document.getElementById('progressBar').style.display='none';
+  const cfg=LEVELS[level];
+  const pct=attempts?Math.round(score/attempts*100):0;
+  document.getElementById('scoreNum').textContent=score;
+  document.getElementById('scoreDen').textContent='/'+attempts;
+  const ring=document.getElementById('scoreRing');
+  ring.style.border='4px solid '+(pct>=70?'#16a34a':pct>=40?'#d97706':'#dc2626');
+  document.getElementById('scoreNum').style.color=pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171';
+  let title='Session Complete';
+  if(pct>=80) title='Excellent Perception! 🌟';
+  else if(pct>=60) title='Good Intuition 🎯';
+  else if(pct>=40) title='Keep Practicing 💪';
+  else title='Stay Focused 🧘';
+  document.getElementById('resultTitle').textContent=title;
+  document.getElementById('resultSub').textContent=pct+'% accuracy across '+attempts+' targets';
+  document.getElementById('rProfile').textContent=profile.icon+' '+profile.name;
+  document.getElementById('rLevel').textContent='Level '+level+' — '+cfg.name;
+  document.getElementById('rMode').textContent=mode==='hypermode'?'⚡ Hypermode':'🎯 Normal Mode';
+  document.getElementById('rAcc').textContent=pct+'%';
+  show('results');
+}
+
+function restart(){
+  score=0;attempts=0;usedTargets=[];
+  selectLevel(level);
+}
+
+// ── PWA ──
+let deferredPrompt=null;
+if(!window.matchMedia('(display-mode: standalone)').matches&&!localStorage.getItem('pwa-ait-dismissed')){
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();deferredPrompt=e;
+    setTimeout(()=>document.getElementById('pwaBanner').style.display='flex',3000);
+  });
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isIOS&&!window.navigator.standalone){
+    setTimeout(()=>{
+      document.getElementById('pwaBanner').style.display='flex';
+      document.getElementById('pwaInstallBtn').textContent='How to install?';
+      document.getElementById('pwaInstallBtn').onclick=()=>alert('1) Tap Share button in Safari\n2) Choose Add to Home Screen\n3) Tap Add');
+    },3000);
+  }
+}
+document.getElementById('pwaInstallBtn').addEventListener('click',()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')document.getElementById('pwaBanner').style.display='none';});
+});
+function dismissPWA(){document.getElementById('pwaBanner').style.display='none';localStorage.setItem('pwa-ait-dismissed','1');}
+</script>
+</body>
 </html>
